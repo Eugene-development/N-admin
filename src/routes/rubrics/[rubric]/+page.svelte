@@ -1,0 +1,50 @@
+<script>
+    import { page } from '$app/stores';
+    import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
+    import { initAuth, getAuthState } from '$lib/stores/auth.svelte.js';
+    import AdminLayout from '$lib/components/AdminLayout.svelte';
+    import CategoryManager from '$lib/islands/CategoryManager.svelte';
+
+    const rubricNames = {
+        mebel: 'Мебель',
+        appliances: 'Бытовая техника',
+        countertops: 'Столешницы',
+        plumbing: 'Сантехника',
+        fittings: 'Фурнитура',
+        accessories: 'Аксессуары'
+    };
+
+    const auth = getAuthState();
+    let isChecking = $state(true);
+    
+    // Use derived state to react to page navigation
+    let currentRubric = $derived($page.params.rubric);
+    let title = $derived(rubricNames[currentRubric] || currentRubric);
+
+    onMount(async () => {
+        await initAuth();
+        isChecking = false;
+        
+        if (!auth.isAuthenticated) {
+            goto('/login');
+        }
+    });
+</script>
+
+<svelte:head>
+    <title>{title} | Admin</title>
+</svelte:head>
+
+{#if isChecking || auth.isLoading}
+    <div class="flex min-h-screen items-center justify-center bg-gray-50">
+        <div class="flex flex-col items-center gap-2">
+            <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-gray-500 text-sm">Проверка доступа...</p>
+        </div>
+    </div>
+{:else if auth.isAuthenticated}
+    <AdminLayout>
+        <CategoryManager rubric={currentRubric} title="Управление: {title}" />
+    </AdminLayout>
+{/if}
