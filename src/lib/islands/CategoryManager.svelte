@@ -1,27 +1,27 @@
 <script>
-    import { getMebels, createMebel, updateMebel, deleteMebel } from '$lib/api/graphql.js';
-    import MebelModal from './MebelModal.svelte';
+    import { getCategories, createCategory, updateCategory, deleteCategory } from '$lib/api/graphql.js';
+    import CategoryModal from './CategoryModal.svelte';
 
-    let { rubric = 'mebel', title = 'Управление категориями' } = $props();
+    let { rubricId = null, rubricSlug = '', title = 'Управление категориями' } = $props();
 
     // State
-    let mebels = $state([]);
+    let categories = $state([]);
     let isLoading = $state(true);
     let error = $state(null);
     let showModal = $state(false);
-    let editingMebel = $state(null);
+    let editingCategory = $state(null);
     let showDeleted = $state(false);
 
     // Load data
-    async function loadMebels() {
+    async function loadCategories() {
         isLoading = true;
         error = null;
         try {
-            // Pass rubric filter
-            const options = { rubric };
+            const options = {};
+            if (rubricId) options.rubric_id = rubricId;
             if (showDeleted) options.trashed = 'WITH';
             
-            mebels = await getMebels(options);
+            categories = await getCategories(options);
         } catch (e) {
             error = e.message;
             console.error('Failed to load categories:', e);
@@ -32,36 +32,35 @@
 
     // React to rubric changes
     $effect(() => {
-        // Reset state when rubric changes
-        mebels = [];
-        loadMebels();
+        categories = [];
+        loadCategories();
     });
 
     function handleAdd() {
-        editingMebel = null;
+        editingCategory = null;
         showModal = true;
     }
 
-    function handleEdit(mebel) {
-        editingMebel = mebel;
+    function handleEdit(category) {
+        editingCategory = category;
         showModal = true;
     }
 
     async function handleDelete(id) {
-        if (!confirm('Вы уверены, что хотите удалить эту запись?')) return;
+        if (!confirm('Вы уверены, что хотите удалить эту категорию?')) return;
         
         try {
-            await deleteMebel(id);
-            await loadMebels();
+            await deleteCategory(id);
+            await loadCategories();
         } catch (e) {
             alert('Ошибка при удалении: ' + e.message);
         }
     }
 
-    async function handleToggleActive(mebel) {
+    async function handleToggleActive(category) {
         try {
-            await updateMebel(mebel.id, { is_active: !mebel.is_active });
-            await loadMebels();
+            await updateCategory(category.id, { is_active: !category.is_active });
+            await loadCategories();
         } catch (e) {
             alert('Ошибка при обновлении: ' + e.message);
         }
@@ -69,17 +68,19 @@
 
     async function handleSave(data) {
         try {
-            // Inject rubric
-            const payload = { ...data, rubric };
+            // Inject rubric_id
+            const payload = { ...data };
+            if (rubricId) {
+                payload.rubric_id = rubricId;
+            }
             
-            if (editingMebel) {
-                // Determine if we need to send rubric on update (usually not, but fine)
-                await updateMebel(editingMebel.id, payload);
+            if (editingCategory) {
+                await updateCategory(editingCategory.id, payload);
             } else {
-                await createMebel(payload);
+                await createCategory(payload);
             }
             showModal = false;
-            await loadMebels();
+            await loadCategories();
         } catch (e) {
             alert('Ошибка при сохранении: ' + e.message);
         }
@@ -87,7 +88,7 @@
 
     function handleCancel() {
         showModal = false;
-        editingMebel = null;
+        editingCategory = null;
     }
 </script>
 
@@ -100,7 +101,7 @@
                 <input 
                     type="checkbox" 
                     bind:checked={showDeleted}
-                    onchange={loadMebels}
+                    onchange={loadCategories}
                     class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 Показать удалённые
@@ -130,14 +131,14 @@
             <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
             <p class="mt-2">Загрузка данных...</p>
         </div>
-    {:else if mebels.length === 0}
+    {:else if categories.length === 0}
         <div class="py-12 text-center text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
             </svg>
-            <p class="mt-2">Нет категорий для рубрики "{rubric}"</p>
+            <p class="mt-2">Нет категорий</p>
             <button onclick={handleAdd} class="mt-4 text-indigo-600 hover:text-indigo-800 font-medium">
-                Добавить первую запись
+                Добавить первую категорию
             </button>
         </div>
     {:else}
@@ -146,7 +147,7 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Значение</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Описание</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Фон</th>
@@ -156,66 +157,66 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    {#each mebels as mebel (mebel.id)}
-                        <tr class:opacity-50={mebel.deleted_at} class="hover:bg-gray-50 transition-colors">
+                    {#each categories as category (category.id)}
+                        <tr class:opacity-50={category.deleted_at} class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{mebel.value}</div>
+                                <div class="text-sm font-medium text-gray-900">{category.value}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded w-fit">{mebel.slug}</div>
+                                <div class="text-sm text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded w-fit">{category.slug}</div>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="text-sm text-gray-500 max-w-xs truncate">{mebel.description || '—'}</div>
+                                <div class="text-sm text-gray-500 max-w-xs truncate">{category.description || '—'}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                {#if mebel.bg}
+                                {#if category.bg}
                                     <div 
                                         class="w-8 h-8 rounded border border-gray-200 shadow-sm" 
-                                        style="background: {mebel.bg}"
-                                        title={mebel.bg}
+                                        style="background: {category.bg}"
+                                        title={category.bg}
                                     ></div>
                                 {:else}
                                     <span class="text-sm text-gray-400">—</span>
                                 {/if}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-sm text-gray-500">{mebel.sort_order}</span>
+                                <span class="text-sm text-gray-500">{category.sort_order}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                {#if mebel.deleted_at}
+                                {#if category.deleted_at}
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                         Удалён
                                     </span>
                                 {:else}
                                     <button
-                                        onclick={() => handleToggleActive(mebel)}
-                                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 {mebel.is_active ? 'bg-indigo-600' : 'bg-gray-200'}"
+                                        onclick={() => handleToggleActive(category)}
+                                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 {category.is_active ? 'bg-indigo-600' : 'bg-gray-200'}"
                                         role="switch"
-                                        aria-checked={mebel.is_active}
+                                        aria-checked={category.is_active}
                                         aria-label="Переключить статус активности"
                                     >
                                         <span 
-                                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {mebel.is_active ? 'translate-x-5' : 'translate-x-0'}"
+                                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {category.is_active ? 'translate-x-5' : 'translate-x-0'}"
                                         ></span>
                                     </button>
                                 {/if}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                {#if !mebel.deleted_at}
+                                {#if !category.deleted_at}
                                     <button
-                                        onclick={() => handleEdit(mebel)}
+                                        onclick={() => handleEdit(category)}
                                         class="text-indigo-600 hover:text-indigo-900 mr-3"
                                     >
                                         Изменить
                                     </button>
                                     <button
-                                        onclick={() => handleDelete(mebel.id)}
+                                        onclick={() => handleDelete(category.id)}
                                         class="text-red-600 hover:text-red-900"
                                     >
                                         Удалить
                                     </button>
                                 {:else}
-                                    <span class="text-gray-400 text-xs">Удалён {new Date(mebel.deleted_at).toLocaleDateString('ru')}</span>
+                                    <span class="text-gray-400 text-xs">Удалён {new Date(category.deleted_at).toLocaleDateString('ru')}</span>
                                 {/if}
                             </td>
                         </tr>
@@ -228,8 +229,9 @@
 
 <!-- Modal -->
 {#if showModal}
-    <MebelModal 
-        mebel={editingMebel} 
+    <CategoryModal 
+        category={editingCategory}
+        rubricId={rubricId}
         onSave={handleSave} 
         onCancel={handleCancel} 
     />
