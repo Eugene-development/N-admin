@@ -2,12 +2,22 @@
     let { rubric = null, onSave, onCancel } = $props();
 
     // Form state
-    let value = $state(rubric?.value || '');
-    let slug = $state(rubric?.slug || '');
-    let description = $state(rubric?.description || '');
-    let is_active = $state(rubric?.is_active ?? true);
-    let sort_order = $state(rubric?.sort_order ?? 0);
+    let value = $state('');
+    let slug = $state('');
+    let description = $state('');
+    let is_active = $state(true);
+    let sort_order = $state(0);
     let isSubmitting = $state(false);
+
+    // Sync form state when rubric prop changes
+    $effect(() => {
+        value = rubric?.value || '';
+        slug = rubric?.slug || '';
+        description = rubric?.description || '';
+        is_active = rubric?.is_active ?? true;
+        sort_order = rubric?.sort_order ?? 0;
+        isSubmitting = false;
+    });
 
     function handleSubmit(e) {
         e.preventDefault();
