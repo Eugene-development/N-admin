@@ -52,6 +52,20 @@
             Рубрики
         </a>
 
+        <!-- Управление товарами -->
+        <a 
+            href="/products"
+            class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 
+            {$page.url.pathname === '/products' 
+                ? 'bg-indigo-50 text-indigo-700 shadow-sm' 
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}"
+        >
+            <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            Товары
+        </a>
+
         <!-- Динамический список рубрик -->
         {#if rubrics.length > 0}
             <div class="mt-6 mb-2 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
