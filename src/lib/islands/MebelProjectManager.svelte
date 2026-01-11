@@ -75,7 +75,7 @@
         }
     }
 
-    async function handleSave(data) {
+    async function handleSave(data, pendingProjectId = null) {
         try {
             // Inject category_id if set
             const payload = { ...data };
@@ -86,6 +86,11 @@
             if (editingProject) {
                 await updateMebelProject(editingProject.id, payload);
             } else {
+                // Для нового товара используем заранее сгенерированный ID
+                // чтобы изображения, загруженные до сохранения, были привязаны к нему
+                if (pendingProjectId) {
+                    payload.id = pendingProjectId;
+                }
                 await createMebelProject(payload);
             }
             showModal = false;

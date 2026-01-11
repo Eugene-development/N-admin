@@ -1,8 +1,15 @@
 <script>
     import { onMount } from 'svelte';
+    import { ulid } from 'ulid';
     import { getCategories } from '$lib/api/graphql.js';
+    import { getImages } from '$lib/api/images.js';
+    import ImageUploader from '$lib/components/ImageUploader.svelte';
 
     let { project = null, categoryId = null, onSave, onCancel } = $props();
+
+    // Генерируем ULID для нового товара заранее (или используем существующий ID)
+    // Это позволяет загружать изображения сразу, до сохранения товара
+    const pendingProjectId = project?.id || ulid();
 
     // Form state
     let value = $state(project?.value || '');
@@ -22,6 +29,10 @@
     let categories = $state([]);
     let categoriesLoading = $state(true);
 
+    // Images state
+    let images = $state(project?.images || []);
+    let imagesLoading = $state(false);
+
     onMount(async () => {
         try {
             categories = await getCategories({ is_active: true });
@@ -30,7 +41,24 @@
         } finally {
             categoriesLoading = false;
         }
+
+        // Load images if editing existing project
+        if (project?.id) {
+            imagesLoading = true;
+            try {
+                const result = await getImages('App\\Models\\MebelProject', project.id);
+                images = result.images || [];
+            } catch (e) {
+                console.error('Failed to load images:', e);
+            } finally {
+                imagesLoading = false;
+            }
+        }
     });
+
+    function handleImagesChange(newImages) {
+        images = newImages;
+    }
 
     function handleSubmit(e) {
         e.preventDefault();
@@ -60,7 +88,9 @@
             data.slug = slug.trim();
         }
 
-        onSave(data);
+        // Передаём ID для нового товара (сгенерированный ULID)
+        // Это позволяет создать товар с тем же ID, что использовался для загрузки изображений
+        onSave(data, pendingProjectId);
     }
 
     function handleBackdropClick(e) {
@@ -89,7 +119,7 @@
 
 <!-- Backdrop -->
 <div 
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8"
+    class="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm overflow-y-auto py-8"
     onclick={handleBackdropClick}
     onkeydown={handleKeydown}
     role="dialog"
@@ -98,7 +128,7 @@
     tabindex="-1"
 >
     <!-- Modal -->
-    <div class="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl mx-4 animate-in fade-in zoom-in duration-200">
+    <div class="w-full max-w-5xl rounded-xl bg-white p-6 shadow-2xl mx-4 my-auto animate-in fade-in zoom-in duration-200">
         <div class="flex items-center justify-between mb-6">
             <h3 id="modal-title" class="text-xl font-bold text-gray-900">
                 {project ? 'Редактировать товар' : 'Новый товар'}
@@ -115,173 +145,163 @@
         </div>
 
         <form onsubmit={handleSubmit} class="space-y-5">
-            <!-- Value -->
-            <div>
-                <label for="value" class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Название <span class="text-red-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    id="value"
-                    bind:value
-                    required
-                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
-                    placeholder="Название товара"
-                />
+            <!-- Two Column Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left Column -->
+                <div class="space-y-5">
+                    <!-- Value -->
+                    <div>
+                        <label for="value" class="block text-sm font-medium text-gray-700 mb-1.5">
+                            Название <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="value"
+                            bind:value
+                            required
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
+                            placeholder="Название товара"
+                        />
+                    </div>
+
+                    <!-- Category Selection -->
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-1.5">
+                            Категория <span class="text-red-500">*</span>
+                        </label>
+                        {#if categoriesLoading}
+                            <div class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-400 bg-gray-50">
+                                Загрузка категорий...
+                            </div>
+                        {:else}
+                            <select
+                                id="category"
+                                bind:value={category_id}
+                                required
+                                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors bg-white"
+                            >
+                                <option value="">Выберите категорию</option>
+                                {#each categories as cat}
+                                    <option value={cat.id}>
+                                        {cat.rubric?.value ? `${cat.rubric.value} → ` : ''}{cat.value}
+                                    </option>
+                                {/each}
+                            </select>
+                        {/if}
+                    </div>
+
+                    <!-- Price & Old Price -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="price" class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Цена (₽)
+                            </label>
+                            <input
+                                type="number"
+                                id="price"
+                                bind:value={price}
+                                min="0"
+                                step="0.01"
+                                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <div>
+                            <label for="old_price" class="block text-sm font-medium text-gray-700 mb-1.5">
+                                Старая цена (₽)
+                                {#if getDiscountPercent() > 0}
+                                    <span class="ml-2 text-xs text-green-600 font-semibold">-{getDiscountPercent()}%</span>
+                                {/if}
+                            </label>
+                            <input
+                                type="number"
+                                id="old_price"
+                                bind:value={old_price}
+                                min="0"
+                                step="0.01"
+                                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
+                                placeholder="0.00"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-5">
+                    <!-- Short Description -->
+                    <div>
+                        <label for="short_description" class="block text-sm font-medium text-gray-700 mb-1.5">
+                            Краткое описание
+                        </label>
+                        <input
+                            type="text"
+                            id="short_description"
+                            bind:value={short_description}
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
+                            placeholder="Краткое описание для карточки"
+                        />
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1.5">
+                            Полное описание
+                        </label>
+                        <textarea
+                            id="description"
+                            bind:value={description}
+                            rows="3"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors resize-none"
+                            placeholder="Полное описание товара..."
+                        ></textarea>
+                    </div>
+
+                    <!-- Flags -->
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                bind:checked={is_active}
+                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span class="text-sm text-gray-700">Активен</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                bind:checked={is_featured}
+                                class="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500"
+                            />
+                            <span class="text-sm text-gray-700">⭐ Избранное</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                bind:checked={is_new}
+                                class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                            />
+                            <span class="text-sm text-gray-700">🆕 Новинка</span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
-            <!-- Category Selection -->
-            <div>
-                <label for="category" class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Категория <span class="text-red-500">*</span>
-                </label>
-                {#if categoriesLoading}
-                    <div class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-400 bg-gray-50">
-                        Загрузка категорий...
+            <!-- Images Section -->
+            <div class="pt-4 border-t">
+                {#if imagesLoading}
+                    <div class="flex items-center gap-2 text-gray-500 text-sm">
+                        <div class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                        Загрузка изображений...
                     </div>
                 {:else}
-                    <select
-                        id="category"
-                        bind:value={category_id}
-                        required
-                        class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors bg-white"
-                    >
-                        <option value="">Выберите категорию</option>
-                        {#each categories as cat}
-                            <option value={cat.id}>
-                                {cat.rubric?.value ? `${cat.rubric.value} → ` : ''}{cat.value}
-                            </option>
-                        {/each}
-                    </select>
+                    <ImageUploader 
+                        {images}
+                        parentableType="App\Models\MebelProject"
+                        parentableId={pendingProjectId}
+                        maxImages={8}
+                        onImagesChange={handleImagesChange}
+                    />
                 {/if}
-                <p class="mt-1 text-xs text-gray-500">К какой категории относится этот товар</p>
-            </div>
-
-            <!-- Slug -->
-            <div>
-                <label for="slug" class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Slug (URL)
-                </label>
-                <input
-                    type="text"
-                    id="slug"
-                    bind:value={slug}
-                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-mono focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
-                    placeholder="url-slug (генерируется автоматически)"
-                />
-                <p class="mt-1 text-xs text-gray-500">Оставьте пустым для автогенерации из названия</p>
-            </div>
-
-            <!-- Price & Old Price -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="price" class="block text-sm font-medium text-gray-700 mb-1.5">
-                        Цена (₽)
-                    </label>
-                    <input
-                        type="number"
-                        id="price"
-                        bind:value={price}
-                        min="0"
-                        step="0.01"
-                        class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
-                        placeholder="0.00"
-                    />
-                </div>
-                <div>
-                    <label for="old_price" class="block text-sm font-medium text-gray-700 mb-1.5">
-                        Старая цена (₽)
-                        {#if getDiscountPercent() > 0}
-                            <span class="ml-2 text-xs text-green-600 font-semibold">-{getDiscountPercent()}%</span>
-                        {/if}
-                    </label>
-                    <input
-                        type="number"
-                        id="old_price"
-                        bind:value={old_price}
-                        min="0"
-                        step="0.01"
-                        class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
-                        placeholder="0.00"
-                    />
-                    <p class="mt-1 text-xs text-gray-500">Для отображения скидки</p>
-                </div>
-            </div>
-
-            <!-- Short Description -->
-            <div>
-                <label for="short_description" class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Краткое описание
-                </label>
-                <input
-                    type="text"
-                    id="short_description"
-                    bind:value={short_description}
-                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
-                    placeholder="Краткое описание для карточки"
-                />
-            </div>
-
-            <!-- Description -->
-            <div>
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Полное описание
-                </label>
-                <textarea
-                    id="description"
-                    bind:value={description}
-                    rows="4"
-                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors resize-none"
-                    placeholder="Полное описание товара..."
-                ></textarea>
-            </div>
-
-            <!-- Flags -->
-            <div class="grid grid-cols-3 gap-4">
-                <div class="flex items-center">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            bind:checked={is_active}
-                            class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span class="text-sm font-medium text-gray-700">Активен</span>
-                    </label>
-                </div>
-                <div class="flex items-center">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            bind:checked={is_featured}
-                            class="h-5 w-5 rounded border-gray-300 text-yellow-500 focus:ring-yellow-500"
-                        />
-                        <span class="text-sm font-medium text-gray-700">⭐ Избранное</span>
-                    </label>
-                </div>
-                <div class="flex items-center">
-                    <label class="flex items-center gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            bind:checked={is_new}
-                            class="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                        />
-                        <span class="text-sm font-medium text-gray-700">🆕 Новинка</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Sort Order -->
-            <div>
-                <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-1.5">
-                    Порядок сортировки
-                </label>
-                <input
-                    type="number"
-                    id="sort_order"
-                    bind:value={sort_order}
-                    min="0"
-                    class="w-full max-w-32 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-colors"
-                />
             </div>
 
             <!-- Actions -->

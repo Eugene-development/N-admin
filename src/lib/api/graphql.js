@@ -545,3 +545,170 @@ export async function restoreMebelProject(id) {
     const data = await graphqlRequest(mutation, { id });
     return data.restoreMebelProject;
 }
+
+// ============================================
+// BRAND QUERIES
+// ============================================
+
+/**
+ * Get all brands
+ * @param {object} options - Query options
+ * @returns {Promise<Array>}
+ */
+export async function getBrands(options = {}) {
+    const query = `
+        query GetBrands($is_active: Boolean, $trashed: Trashed, $rubric_id: ID) {
+            brands(is_active: $is_active, trashed: $trashed, rubric_id: $rubric_id) {
+                id
+                key
+                value
+                slug
+                rubric_id
+                description
+                logo
+                country
+                website
+                is_active
+                sort_order
+                created_at
+                updated_at
+                deleted_at
+                rubric {
+                    id
+                    value
+                    slug
+                }
+            }
+        }
+    `;
+    const data = await graphqlRequest(query, options);
+    return data.brands;
+}
+
+/**
+ * Get single brand by ID
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function getBrand(id) {
+    const query = `
+        query GetBrand($id: ID!) {
+            brand(id: $id) {
+                id
+                key
+                value
+                slug
+                rubric_id
+                description
+                logo
+                country
+                website
+                is_active
+                sort_order
+                created_at
+                updated_at
+                rubric {
+                    id
+                    value
+                    slug
+                }
+            }
+        }
+    `;
+    const data = await graphqlRequest(query, { id });
+    return data.brand;
+}
+
+// ============================================
+// BRAND MUTATIONS
+// ============================================
+
+/**
+ * Create new brand
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function createBrand(input) {
+    const mutation = `
+        mutation CreateBrand($input: CreateBrandInput!) {
+            createBrand(input: $input) {
+                id
+                key
+                value
+                slug
+                rubric_id
+                description
+                logo
+                country
+                website
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { input });
+    return data.createBrand;
+}
+
+/**
+ * Update existing brand
+ * @param {string} id 
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function updateBrand(id, input) {
+    const mutation = `
+        mutation UpdateBrand($id: ID!, $input: UpdateBrandInput!) {
+            updateBrand(id: $id, input: $input) {
+                id
+                key
+                value
+                slug
+                rubric_id
+                description
+                logo
+                country
+                website
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id, input });
+    return data.updateBrand;
+}
+
+/**
+ * Soft delete brand
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function deleteBrand(id) {
+    const mutation = `
+        mutation DeleteBrand($id: ID!) {
+            deleteBrand(id: $id) {
+                id
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id });
+    return data.deleteBrand;
+}
+
+/**
+ * Restore soft deleted brand
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function restoreBrand(id) {
+    const mutation = `
+        mutation RestoreBrand($id: ID!) {
+            restoreBrand(id: $id) {
+                id
+                is_active
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id });
+    return data.restoreBrand;
+}
