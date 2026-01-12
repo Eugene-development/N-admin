@@ -10,10 +10,14 @@
     } = $props();
 
     let imageElement = $state(null);
-    let cropper = $state(null);
     let imageUrl = $state('');
     let isProcessing = $state(false);
-    let Cropper = $state(null);
+    let isReady = $state(false);
+    let cropperReady = $state(false);
+    
+    // Хранение вне $state чтобы избежать прокси
+    let CropperClass = null;
+    let cropperInstance = null;
 
     // Предустановленные соотношения сторон
     const aspectRatios = [
@@ -31,83 +35,109 @@
         }
         // Динамический импорт cropperjs только на клиенте
         if (browser) {
+            // Импортируем CSS
+            await import('cropperjs/dist/cropper.css');
+            // Импортируем библиотеку
             const module = await import('cropperjs');
-            Cropper = module.default;
+            CropperClass = module.default;
+            isReady = true;
         }
     });
 
     onDestroy(() => {
-        if (cropper) {
-            cropper.destroy();
+        if (cropperInstance) {
+            cropperInstance.destroy();
+            cropperInstance = null;
         }
         if (imageUrl) {
             URL.revokeObjectURL(imageUrl);
         }
     });
 
-    function initCropper(node) {
-        if (!node || !Cropper) return;
-        
-        cropper = new Cropper(node, {
-            aspectRatio: selectedRatio,
-            viewMode: 1,
-            dragMode: 'move',
-            autoCropArea: 0.9,
-            restore: false,
-            guides: true,
-            center: true,
-            highlight: true,
-            cropBoxMovable: true,
-            cropBoxResizable: true,
-            toggleDragModeOnDblclick: false,
-            initialAspectRatio: selectedRatio,
-            responsive: true,
-            background: true,
-        });
+    // Инициализация cropper когда и элемент и библиотека готовы
+    $effect(() => {
+        if (imageElement && CropperClass && !cropperInstance) {
+            cropperInstance = new CropperClass(imageElement, {
+                aspectRatio: selectedRatio,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 0.9,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: true,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+                initialAspectRatio: selectedRatio,
+                responsive: true,
+                background: true,
+            });
+            cropperReady = true;
+        }
+    });
 
-        imageElement = node;
-    }
-
-    function changeAspectRatio(ratio) {
+    function handleChangeAspectRatio(e, ratio) {
+        e.preventDefault();
+        e.stopPropagation();
         selectedRatio = ratio;
-        if (cropper) {
-            cropper.setAspectRatio(ratio);
+        if (cropperInstance) {
+            cropperInstance.setAspectRatio(ratio);
         }
     }
 
-    function rotateLeft() {
-        if (cropper) cropper.rotate(-90);
+    function handleRotateLeft(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cropperInstance) cropperInstance.rotate(-90);
     }
 
-    function rotateRight() {
-        if (cropper) cropper.rotate(90);
+    function handleRotateRight(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cropperInstance) cropperInstance.rotate(90);
     }
 
-    function flipHorizontal() {
-        if (cropper) {
-            const data = cropper.getData();
-            cropper.scaleX(data.scaleX === -1 ? 1 : -1);
+    function handleFlipHorizontal(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cropperInstance) {
+            const data = cropperInstance.getData();
+            cropperInstance.scaleX(data.scaleX === -1 ? 1 : -1);
         }
     }
 
-    function flipVertical() {
-        if (cropper) {
-            const data = cropper.getData();
-            cropper.scaleY(data.scaleY === -1 ? 1 : -1);
+    function handleFlipVertical(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cropperInstance) {
+            const data = cropperInstance.getData();
+            cropperInstance.scaleY(data.scaleY === -1 ? 1 : -1);
         }
     }
 
-    function reset() {
-        if (cropper) cropper.reset();
+    function handleReset(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (cropperInstance) cropperInstance.reset();
     }
 
-    async function handleCrop() {
-        if (!cropper || isProcessing) return;
+    function handleCancel(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        onCancel();
+    }
+
+    async function handleCrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!cropperInstance || isProcessing) return;
         
         isProcessing = true;
 
         try {
-            const canvas = cropper.getCroppedCanvas({
+            const canvas = cropperInstance.getCroppedCanvas({
                 maxWidth: 4096,
                 maxHeight: 4096,
                 imageSmoothingEnabled: true,
@@ -124,8 +154,8 @@
             const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
 
             onCrop(croppedFile);
-        } catch (e) {
-            console.error('Crop failed:', e);
+        } catch (err) {
+            console.error('Crop failed:', err);
         } finally {
             isProcessing = false;
         }
@@ -134,19 +164,22 @@
 
 <!-- Modal Backdrop -->
 <div 
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
     onclick={(e) => e.target === e.currentTarget && onCancel()}
-    onkeypress={(e) => e.key === 'Escape' && onCancel()}
     role="dialog"
     tabindex="-1"
 >
     <!-- Modal Content -->
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+    <div 
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+        onclick={(e) => e.stopPropagation()}
+    >
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
             <h3 class="text-lg font-semibold text-gray-900">Обрезка изображения</h3>
             <button
-                onclick={onCancel}
+                type="button"
+                onclick={handleCancel}
                 class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Закрыть"
             >
@@ -158,11 +191,16 @@
 
         <!-- Cropper Area -->
         <div class="flex-1 bg-gray-900 relative min-h-[400px] max-h-[60vh]">
-            {#if imageUrl}
+            {#if !isReady}
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            {/if}
+            {#if imageUrl && isReady}
                 <img 
                     src={imageUrl} 
                     alt="Редактирование"
-                    use:initCropper
+                    bind:this={imageElement}
                     class="max-w-full max-h-full"
                 />
             {/if}
@@ -177,7 +215,8 @@
                     <div class="flex gap-1">
                         {#each aspectRatios as ratio}
                             <button
-                                onclick={() => changeAspectRatio(ratio.value)}
+                                type="button"
+                                onclick={(e) => handleChangeAspectRatio(e, ratio.value)}
                                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-colors
                                     {(Number.isNaN(selectedRatio) && Number.isNaN(ratio.value)) || selectedRatio === ratio.value
                                         ? 'bg-indigo-600 text-white' 
@@ -195,7 +234,8 @@
                 <!-- Rotate & Flip -->
                 <div class="flex items-center gap-1">
                     <button
-                        onclick={rotateLeft}
+                        type="button"
+                        onclick={handleRotateLeft}
                         class="p-2 text-gray-600 hover:bg-white hover:text-gray-900 rounded-lg transition-colors"
                         title="Повернуть влево"
                     >
@@ -204,7 +244,8 @@
                         </svg>
                     </button>
                     <button
-                        onclick={rotateRight}
+                        type="button"
+                        onclick={handleRotateRight}
                         class="p-2 text-gray-600 hover:bg-white hover:text-gray-900 rounded-lg transition-colors"
                         title="Повернуть вправо"
                     >
@@ -213,7 +254,8 @@
                         </svg>
                     </button>
                     <button
-                        onclick={flipHorizontal}
+                        type="button"
+                        onclick={handleFlipHorizontal}
                         class="p-2 text-gray-600 hover:bg-white hover:text-gray-900 rounded-lg transition-colors"
                         title="Отразить горизонтально"
                     >
@@ -222,7 +264,8 @@
                         </svg>
                     </button>
                     <button
-                        onclick={flipVertical}
+                        type="button"
+                        onclick={handleFlipVertical}
                         class="p-2 text-gray-600 hover:bg-white hover:text-gray-900 rounded-lg transition-colors"
                         title="Отразить вертикально"
                     >
@@ -237,7 +280,8 @@
 
                 <!-- Reset -->
                 <button
-                    onclick={reset}
+                    type="button"
+                    onclick={handleReset}
                     class="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-white hover:text-gray-900 rounded-lg transition-colors"
                 >
                     Сбросить
@@ -248,14 +292,16 @@
         <!-- Actions -->
         <div class="flex justify-end gap-3 px-6 py-4">
             <button
-                onclick={onCancel}
+                type="button"
+                onclick={handleCancel}
                 class="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
                 Отмена
             </button>
             <button
+                type="button"
                 onclick={handleCrop}
-                disabled={isProcessing}
+                disabled={isProcessing || !cropperReady}
                 class="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
                 {#if isProcessing}

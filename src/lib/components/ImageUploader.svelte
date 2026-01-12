@@ -243,9 +243,9 @@
 
     <!-- Images Grid -->
     {#if images.length > 0}
-        <div class="grid grid-cols-4 gap-3">
+        <div class="grid grid-cols-6 gap-2">
             {#each images as image, index (image.id)}
-                <div class="relative group aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-indigo-400 transition-colors">
+                <div class="relative group w-20 h-[60px] rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-indigo-400 transition-colors">
                     <!-- Image -->
                     <img 
                         src={image.url || image.path} 
@@ -254,15 +254,15 @@
                     />
                     
                     <!-- Overlay with actions -->
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-0.5">
                         <!-- Move Up -->
                         {#if index > 0}
                             <button
                                 onclick={() => handleMoveUp(index)}
-                                class="p-1.5 rounded-full bg-white/90 text-gray-700 hover:bg-white transition-colors"
+                                class="p-1 rounded-full bg-white/90 text-gray-700 hover:bg-white transition-colors"
                                 title="Переместить влево"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                                 </svg>
                             </button>
@@ -272,10 +272,10 @@
                         {#if index < images.length - 1}
                             <button
                                 onclick={() => handleMoveDown(index)}
-                                class="p-1.5 rounded-full bg-white/90 text-gray-700 hover:bg-white transition-colors"
+                                class="p-1 rounded-full bg-white/90 text-gray-700 hover:bg-white transition-colors"
                                 title="Переместить вправо"
                             >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                 </svg>
                             </button>
@@ -284,26 +284,19 @@
                         <!-- Delete -->
                         <button
                             onclick={() => handleDelete(image.id)}
-                            class="p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                            class="p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
                             title="Удалить"
                         >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                     </div>
                     
                     <!-- Order badge -->
-                    <div class="absolute top-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                    <div class="absolute top-0.5 left-0.5 bg-black/70 text-white text-[10px] px-1 py-0.5 rounded">
                         {index + 1}
                     </div>
-                    
-                    <!-- Size badge -->
-                    {#if image.size}
-                        <div class="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                            {formatFileSize(image.size)}
-                        </div>
-                    {/if}
                 </div>
             {/each}
         </div>

@@ -32,7 +32,7 @@
 		"vitest-browser-svelte": "^2.0.1"
 	},
 	"dependencies": {
-		"cropperjs": "^2.1.0",
+		"cropperjs": "^1.6.2",
 		"graphql-request": "^7.4.0",
 		"qrcode": "^1.5.4",
 		"runed": "^0.37.1",
