@@ -712,3 +712,410 @@ export async function restoreBrand(id) {
     const data = await graphqlRequest(mutation, { id });
     return data.restoreBrand;
 }
+
+// ============================================
+// SHOP QUERIES
+// ============================================
+
+/**
+ * Get all shops
+ * @param {object} options - Query options
+ * @returns {Promise<Array>}
+ */
+export async function getShops(options = {}) {
+    const query = `
+        query GetShops($is_active: Boolean, $trashed: Trashed, $rubric_id: ID) {
+            shops(is_active: $is_active, trashed: $trashed, rubric_id: $rubric_id) {
+                id
+                key
+                value
+                slug
+                rubric_id
+                description
+                logo
+                website
+                phone
+                email
+                is_active
+                sort_order
+                created_at
+                updated_at
+                deleted_at
+                rubric {
+                    id
+                    value
+                    slug
+                }
+                categories {
+                    id
+                    value
+                    slug
+                    is_active
+                    sort_order
+                }
+                brands {
+                    id
+                    value
+                    logo
+                    is_active
+                    sort_order
+                }
+                cities {
+                    id
+                    city_name
+                    is_active
+                    sort_order
+                }
+            }
+        }
+    `;
+    const data = await graphqlRequest(query, options);
+    return data.shops;
+}
+
+/**
+ * Get single shop by ID
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function getShop(id) {
+    const query = `
+        query GetShop($id: ID!) {
+            shop(id: $id) {
+                id
+                key
+                value
+                slug
+                rubric_id
+                description
+                logo
+                website
+                phone
+                email
+                is_active
+                sort_order
+                created_at
+                updated_at
+                rubric {
+                    id
+                    value
+                    slug
+                }
+                categories {
+                    id
+                    value
+                    slug
+                    is_active
+                    sort_order
+                }
+                brands {
+                    id
+                    value
+                    logo
+                    is_active
+                    sort_order
+                }
+                cities {
+                    id
+                    city_name
+                    is_active
+                    sort_order
+                }
+            }
+        }
+    `;
+    const data = await graphqlRequest(query, { id });
+    return data.shop;
+}
+
+// ============================================
+// SHOP MUTATIONS
+// ============================================
+
+/**
+ * Create new shop
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function createShop(input) {
+    const mutation = `
+        mutation CreateShop($input: CreateShopInput!) {
+            createShop(input: $input) {
+                id
+                key
+                value
+                slug
+                rubric_id
+                description
+                logo
+                website
+                phone
+                email
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { input });
+    return data.createShop;
+}
+
+/**
+ * Update existing shop
+ * @param {string} id 
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function updateShop(id, input) {
+    const mutation = `
+        mutation UpdateShop($id: ID!, $input: UpdateShopInput!) {
+            updateShop(id: $id, input: $input) {
+                id
+                key
+                value
+                slug
+                rubric_id
+                description
+                logo
+                website
+                phone
+                email
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id, input });
+    return data.updateShop;
+}
+
+/**
+ * Soft delete shop
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function deleteShop(id) {
+    const mutation = `
+        mutation DeleteShop($id: ID!) {
+            deleteShop(id: $id) {
+                id
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id });
+    return data.deleteShop;
+}
+
+/**
+ * Restore soft deleted shop
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function restoreShop(id) {
+    const mutation = `
+        mutation RestoreShop($id: ID!) {
+            restoreShop(id: $id) {
+                id
+                is_active
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id });
+    return data.restoreShop;
+}
+
+// ============================================
+// SHOP CATEGORY MUTATIONS
+// ============================================
+
+/**
+ * Create new shop category
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function createShopCategory(input) {
+    const mutation = `
+        mutation CreateShopCategory($input: CreateShopCategoryInput!) {
+            createShopCategory(input: $input) {
+                id
+                shop_id
+                value
+                slug
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { input });
+    return data.createShopCategory;
+}
+
+/**
+ * Update existing shop category
+ * @param {string} id 
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function updateShopCategory(id, input) {
+    const mutation = `
+        mutation UpdateShopCategory($id: ID!, $input: UpdateShopCategoryInput!) {
+            updateShopCategory(id: $id, input: $input) {
+                id
+                shop_id
+                value
+                slug
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id, input });
+    return data.updateShopCategory;
+}
+
+/**
+ * Delete shop category
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function deleteShopCategory(id) {
+    const mutation = `
+        mutation DeleteShopCategory($id: ID!) {
+            deleteShopCategory(id: $id) {
+                id
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id });
+    return data.deleteShopCategory;
+}
+
+// ============================================
+// SHOP BRAND MUTATIONS
+// ============================================
+
+/**
+ * Create new shop brand
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function createShopBrand(input) {
+    const mutation = `
+        mutation CreateShopBrand($input: CreateShopBrandInput!) {
+            createShopBrand(input: $input) {
+                id
+                shop_id
+                value
+                logo
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { input });
+    return data.createShopBrand;
+}
+
+/**
+ * Update existing shop brand
+ * @param {string} id 
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function updateShopBrand(id, input) {
+    const mutation = `
+        mutation UpdateShopBrand($id: ID!, $input: UpdateShopBrandInput!) {
+            updateShopBrand(id: $id, input: $input) {
+                id
+                shop_id
+                value
+                logo
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id, input });
+    return data.updateShopBrand;
+}
+
+/**
+ * Delete shop brand
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function deleteShopBrand(id) {
+    const mutation = `
+        mutation DeleteShopBrand($id: ID!) {
+            deleteShopBrand(id: $id) {
+                id
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id });
+    return data.deleteShopBrand;
+}
+
+// ============================================
+// SHOP CITY MUTATIONS
+// ============================================
+
+/**
+ * Create new shop city
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function createShopCity(input) {
+    const mutation = `
+        mutation CreateShopCity($input: CreateShopCityInput!) {
+            createShopCity(input: $input) {
+                id
+                shop_id
+                city_name
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { input });
+    return data.createShopCity;
+}
+
+/**
+ * Update existing shop city
+ * @param {string} id 
+ * @param {object} input 
+ * @returns {Promise<object>}
+ */
+export async function updateShopCity(id, input) {
+    const mutation = `
+        mutation UpdateShopCity($id: ID!, $input: UpdateShopCityInput!) {
+            updateShopCity(id: $id, input: $input) {
+                id
+                shop_id
+                city_name
+                is_active
+                sort_order
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id, input });
+    return data.updateShopCity;
+}
+
+/**
+ * Delete shop city
+ * @param {string} id 
+ * @returns {Promise<object>}
+ */
+export async function deleteShopCity(id) {
+    const mutation = `
+        mutation DeleteShopCity($id: ID!) {
+            deleteShopCity(id: $id) {
+                id
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id });
+    return data.deleteShopCity;
+}

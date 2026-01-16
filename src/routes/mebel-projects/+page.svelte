@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-    <title>Товары | Admin</title>
+    <title>Проекты мебели | Admin</title>
 </svelte:head>
 
 {#if isChecking || auth.isLoading}
@@ -31,6 +31,6 @@
     </div>
 {:else if auth.isAuthenticated}
     <AdminLayout>
-        <MebelProjectManager title="Управление товарами" />
+        <MebelProjectManager title="Проекты мебели" />
     </AdminLayout>
 {/if}
