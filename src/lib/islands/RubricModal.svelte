@@ -59,7 +59,13 @@
 <div 
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
     onclick={handleBackdropClick}
+    onkeydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            handleBackdropClick(e);
+        }
+    }}
     role="dialog"
+    tabindex="0"
     aria-modal="true"
     aria-labelledby="modal-title"
 >
