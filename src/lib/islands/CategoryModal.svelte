@@ -5,14 +5,25 @@
     let { category = null, rubricId = null, onSave, onCancel } = $props();
 
     // Form state
-    let value = $state(category?.value || '');
-    let slug = $state(category?.slug || '');
-    let description = $state(category?.description || '');
-    let bg = $state(category?.bg || '');
-    let is_active = $state(category?.is_active ?? true);
-    let sort_order = $state(category?.sort_order ?? 0);
-    let rubric_id = $state(category?.rubric_id || rubricId || '');
+    let value = $state('');
+    let slug = $state('');
+    let description = $state('');
+    let bg = $state('');
+    let is_active = $state(true);
+    let sort_order = $state(0);
+    let rubric_id = $state('');
     let isSubmitting = $state(false);
+
+    // Sync form state with category prop
+    $effect(() => {
+        value = category?.value || '';
+        slug = category?.slug || '';
+        description = category?.description || '';
+        bg = category?.bg || '';
+        is_active = category?.is_active ?? true;
+        sort_order = category?.sort_order ?? 0;
+        rubric_id = category?.rubric_id || rubricId || '';
+    });
 
     // Rubrics list
     let rubrics = $state([]);
@@ -74,9 +85,16 @@
 <div 
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
     onclick={handleBackdropClick}
+    onkeydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleBackdropClick(e);
+        }
+    }}
     role="dialog"
     aria-modal="true"
     aria-labelledby="modal-title"
+    tabindex="-1"
 >
     <!-- Modal -->
     <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl mx-4 animate-in fade-in zoom-in duration-200">
