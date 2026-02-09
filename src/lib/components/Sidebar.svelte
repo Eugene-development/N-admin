@@ -52,20 +52,6 @@
             Рубрики
         </a>
 
-        <!-- Проекты мебели -->
-        <a 
-            href="/mebel-projects"
-            class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 
-            {$page.url.pathname === '/mebel-projects' 
-                ? 'bg-indigo-50 text-indigo-700 shadow-sm' 
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}"
-        >
-            <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-            </svg>
-            Проекты мебели
-        </a>
-
         <!-- Динамический список рубрик -->
         {#if rubrics.length > 0}
             <div class="mt-6 mb-2 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -84,6 +70,35 @@
                     </svg>
                     {rubric.value}
                 </a>
+                {#if rubric.slug === 'mebel'}
+                    <a 
+                        href="/mebel-projects"
+                        class="flex items-center pl-8 pr-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ml-2 border-l-2 border-gray-200
+                        {$page.url.pathname === '/mebel-projects' 
+                            ? 'bg-indigo-50 text-indigo-700 shadow-sm border-indigo-400' 
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300'}"
+                    >
+                        <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        Проекты
+                    </a>
+                {/if}
+                <!-- Производители столешниц - подпункт категории Столешницы -->
+                {#if rubric.slug === 'stoleshnica'}
+                    <a 
+                        href="/stoleshnica-manufacturers"
+                        class="flex items-center pl-8 pr-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ml-2 border-l-2 border-gray-200
+                        {$page.url.pathname === '/stoleshnica-manufacturers' 
+                            ? 'bg-amber-50 text-amber-700 shadow-sm border-amber-400' 
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300'}"
+                    >
+                        <svg class="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        Производители
+                    </a>
+                {/if}
             {/each}
         {:else if isLoading}
             <div class="mt-6 px-4">

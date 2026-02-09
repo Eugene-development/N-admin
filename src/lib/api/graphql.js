@@ -21,7 +21,7 @@ function getToken() {
  */
 export async function graphqlRequest(query, variables = {}) {
     const token = getToken();
-    
+
     const response = await fetch(GRAPHQL_API_URL, {
         method: 'POST',
         headers: {
@@ -210,6 +210,36 @@ export async function restoreRubric(id) {
 // ============================================
 // CATEGORY QUERIES
 // ============================================
+
+/**
+ * Get categories by rubric slug
+ * @param {string} rubricSlug - Rubric slug
+ * @returns {Promise<object>} - { rubric, categories }
+ */
+export async function getCategoriesByRubricSlug(rubricSlug) {
+    const query = `
+        query GetRubricWithCategories($slug: String!) {
+            rubricBySlug(slug: $slug) {
+                id
+                value
+                slug
+                categories {
+                    id
+                    value
+                    slug
+                    description
+                    is_active
+                    sort_order
+                }
+            }
+        }
+    `;
+    const data = await graphqlRequest(query, { slug: rubricSlug });
+    return {
+        rubric: data.rubricBySlug,
+        categories: data.rubricBySlug?.categories || []
+    };
+}
 
 /**
  * Get all categories
@@ -1118,4 +1148,99 @@ export async function deleteShopCity(id) {
     `;
     const data = await graphqlRequest(mutation, { id });
     return data.deleteShopCity;
+}
+
+// ============================================
+// COUNTERTOP MANUFACTURER QUERIES & MUTATIONS
+// ============================================
+
+/**
+ * Get all countertop manufacturers
+ * @param {object} options - Filter options
+ * @returns {Promise<array>}
+ */
+export async function getCountertopManufacturers(options = {}) {
+    const query = `
+        query GetCountertopManufacturers($is_active: Boolean, $category_id: ID, $trashed: Trashed) {
+            countertopManufacturers(is_active: $is_active, category_id: $category_id, trashed: $trashed) {
+                id
+                key
+                category_id
+                value
+                slug
+                description
+                logo
+                website
+                phone
+                email
+                country
+                is_active
+                sort_order
+                deleted_at
+                category {
+                    id
+                    value
+                    slug
+                }
+            }
+        }
+    `;
+    const data = await graphqlRequest(query, options);
+    return data.countertopManufacturers;
+}
+
+/**
+ * Create countertop manufacturer
+ * @param {object} input - Manufacturer data
+ * @returns {Promise<object>}
+ */
+export async function createCountertopManufacturer(input) {
+    const mutation = `
+        mutation CreateCountertopManufacturer($input: CreateCountertopManufacturerInput!) {
+            createCountertopManufacturer(input: $input) {
+                id
+                value
+                slug
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { input });
+    return data.createCountertopManufacturer;
+}
+
+/**
+ * Update countertop manufacturer
+ * @param {string} id - Manufacturer ID
+ * @param {object} input - Updated data
+ * @returns {Promise<object>}
+ */
+export async function updateCountertopManufacturer(id, input) {
+    const mutation = `
+        mutation UpdateCountertopManufacturer($id: ID!, $input: UpdateCountertopManufacturerInput!) {
+            updateCountertopManufacturer(id: $id, input: $input) {
+                id
+                value
+                slug
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id, input });
+    return data.updateCountertopManufacturer;
+}
+
+/**
+ * Delete countertop manufacturer
+ * @param {string} id - Manufacturer ID
+ * @returns {Promise<object>}
+ */
+export async function deleteCountertopManufacturer(id) {
+    const mutation = `
+        mutation DeleteCountertopManufacturer($id: ID!) {
+            deleteCountertopManufacturer(id: $id) {
+                id
+            }
+        }
+    `;
+    const data = await graphqlRequest(mutation, { id });
+    return data.deleteCountertopManufacturer;
 }

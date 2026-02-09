@@ -68,6 +68,10 @@
     <div 
         class="fixed inset-0 bg-black/50 transition-opacity"
         onclick={onCancel}
+        onkeydown={(e) => e.key === 'Escape' && onCancel()}
+        role="button"
+        tabindex="-1"
+        aria-label="Закрыть модальное окно"
     ></div>
 
     <!-- Modal -->
@@ -79,10 +83,12 @@
                     {brand ? 'Редактирование бренда' : 'Новый бренд'}
                 </h3>
                 <button
+                    type="button"
                     onclick={onCancel}
                     class="text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Закрыть"
                 >
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
@@ -211,6 +217,7 @@
                                 class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 {is_active ? 'bg-indigo-600' : 'bg-gray-200'}"
                                 role="switch"
                                 aria-checked={is_active}
+                                aria-label="Переключить статус активности бренда"
                             >
                                 <span 
                                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {is_active ? 'translate-x-5' : 'translate-x-0'}"
