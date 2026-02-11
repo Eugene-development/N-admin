@@ -3,7 +3,12 @@
  */
 import { browser } from '$app/environment';
 
-const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8001/api';
+/**
+ * Auth API URL — uses server-side proxy to avoid CORS issues.
+ * In production: browser → /api/auth/* → SvelteKit server → auth backend
+ * For local dev with direct access, set VITE_AUTH_API_URL=http://localhost:8001/api
+ */
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || '/api/auth';
 const TOKEN_KEY = 'n_auth_token';
 
 /**
@@ -35,7 +40,6 @@ async function authFetch(endpoint, options = {}) {
     
     const config = {
         ...options,
-        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',

@@ -45,7 +45,9 @@ echo "🔍 Configuration resolved:"
 echo "  API_BASE_URL: ${FINAL_API_BASE_URL}"
 echo "  AUTH_API_URL: ${FINAL_AUTH_API_URL}"
 echo "  FRONTEND_URL: ${FINAL_FRONTEND_URL}"
-echo "  NODE_ENV: $NODE_ENV"
+# Export AUTH_BACKEND_URL for server-side proxy (used by SvelteKit $env/dynamic/private)
+export AUTH_BACKEND_URL="${FINAL_AUTH_API_URL}/api"
+echo "  AUTH_BACKEND_URL: ${AUTH_BACKEND_URL}"
 
 # Start SvelteKit Novostroy Frontend application
 echo "🌐 Starting SvelteKit Novostroy Frontend application..."
