@@ -32,10 +32,18 @@ export async function graphqlRequest(query, variables = {}) {
         body: JSON.stringify({ query, variables }),
     });
 
+    if (!response.ok && response.status >= 500) {
+        const text = await response.text();
+        console.error('Server error:', response.status, text);
+        throw new Error(`Ошибка сервера (${response.status}). Проверьте логи бэкенда.`);
+    }
+
     const result = await response.json();
 
     if (result.errors) {
-        const error = new Error(result.errors[0]?.message || 'GraphQL Error');
+        const errorMessages = result.errors.map(e => e.message || e.debugMessage || JSON.stringify(e)).join('; ');
+        console.error('GraphQL errors:', result.errors);
+        const error = new Error(errorMessages || 'GraphQL Error');
         error.errors = result.errors;
         throw error;
     }

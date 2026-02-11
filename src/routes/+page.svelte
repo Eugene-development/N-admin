@@ -4,7 +4,7 @@
 
 <main class="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">
 	<div class="text-center">
-		<h1 class="mb-4 text-4xl font-bold text-gray-900">Админ-панель-3</h1>
+		<h1 class="mb-4 text-4xl font-bold text-gray-900">Админ-панель-4</h1>
 		<p class="mb-8 text-gray-600">Система управления Novostroy</p>
 
 		<div class="flex gap-4">
