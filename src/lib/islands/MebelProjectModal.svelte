@@ -4,34 +4,68 @@
 	import { getCategories } from '$lib/api/graphql.js';
 	import { getImages } from '$lib/api/images.js';
 	import ImageUploader from '$lib/components/ImageUploader.svelte';
+	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 
 	let { project = null, categoryId = null, onSave, onCancel } = $props();
 
-	// Генерируем ULID для нового товара заранее (или используем существующий ID)
-	// Это позволяет загружать изображения сразу, до сохранения товара
-	const pendingProjectId = project?.id || ulid();
+	// Генерируем ULID для нового проекта заранее (или используем существующий ID)
+	// Это позволяет загружать изображения сразу, до сохранения проекта
+	const pendingProjectId = $derived(project?.id || ulid());
 
 	// Form state
-	let value = $state(project?.value || '');
-	let slug = $state(project?.slug || '');
-	let description = $state(project?.description || '');
-	let short_description = $state(project?.short_description || '');
-	let price = $state(project?.price || '');
-	let old_price = $state(project?.old_price || '');
-	let is_active = $state(project?.is_active ?? true);
-	let is_featured = $state(project?.is_featured ?? false);
-	let is_new = $state(project?.is_new ?? false);
-	let sort_order = $state(project?.sort_order ?? 0);
-	let category_id = $state(project?.category_id || categoryId || '');
+	let value = $state('');
+	let slug = $state('');
+	let description = $state('');
+	let short_description = $state('');
+	let price = $state('');
+	let old_price = $state('');
+	let is_active = $state(true);
+	let is_featured = $state(false);
+	let is_new = $state(false);
+	let sort_order = $state(0);
+	let category_id = $state('');
 	let isSubmitting = $state(false);
+
+	// Sync form state when project or categoryId props change
+	$effect(() => {
+		value = project?.value || '';
+		slug = project?.slug || '';
+		description = project?.description || '';
+		short_description = project?.short_description || '';
+		price = project?.price || '';
+		old_price = project?.old_price || '';
+		is_active = project?.is_active ?? true;
+		is_featured = project?.is_featured ?? false;
+		is_new = project?.is_new ?? false;
+		sort_order = project?.sort_order ?? 0;
+		category_id = project?.category_id || categoryId || '';
+		images = project?.images || [];
+
+		// Load images if editing existing project
+		if (project?.id) {
+			loadImages(project.id);
+		}
+	});
 
 	// Categories list
 	let categories = $state([]);
 	let categoriesLoading = $state(true);
 
 	// Images state
-	let images = $state(project?.images || []);
+	let images = $state([]);
 	let imagesLoading = $state(false);
+
+	async function loadImages(id) {
+		imagesLoading = true;
+		try {
+			const result = await getImages('App\\Models\\MebelProject', id);
+			images = result.images || [];
+		} catch (e) {
+			console.error('Failed to load images:', e);
+		} finally {
+			imagesLoading = false;
+		}
+	}
 
 	onMount(async () => {
 		try {
@@ -40,19 +74,6 @@
 			console.error('Failed to load categories:', e);
 		} finally {
 			categoriesLoading = false;
-		}
-
-		// Load images if editing existing project
-		if (project?.id) {
-			imagesLoading = true;
-			try {
-				const result = await getImages('App\\Models\\MebelProject', project.id);
-				images = result.images || [];
-			} catch (e) {
-				console.error('Failed to load images:', e);
-			} finally {
-				imagesLoading = false;
-			}
 		}
 	});
 
@@ -95,8 +116,8 @@
 			data.slug = slug.trim();
 		}
 
-		// Передаём ID для нового товара (сгенерированный ULID)
-		// Это позволяет создать товар с тем же ID, что использовался для загрузки изображений
+		// Передаём ID для нового проекта (сгенерированный ULID)
+		// Это позволяет создать проект с тем же ID, что использовался для загрузки изображений
 		onSave(data, pendingProjectId);
 	}
 
@@ -140,7 +161,7 @@
 	>
 		<div class="mb-6 flex items-center justify-between">
 			<h3 id="modal-title" class="text-xl font-bold text-gray-900">
-				{project ? 'Редактировать товар' : 'Новый товар'}
+				{project ? 'Редактировать проект' : 'Новый проект'}
 			</h3>
 			<button
 				onclick={onCancel}
@@ -174,7 +195,7 @@
 							bind:value
 							required
 							class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-							placeholder="Название товара"
+							placeholder="Название проекта"
 						/>
 					</div>
 
@@ -260,16 +281,12 @@
 
 					<!-- Description -->
 					<div>
-						<label for="description" class="mb-1.5 block text-sm font-medium text-gray-700">
-							Полное описание
-						</label>
-						<textarea
-							id="description"
-							bind:value={description}
-							rows="3"
-							class="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
-							placeholder="Полное описание товара..."
-						></textarea>
+						<label class="mb-1.5 block text-sm font-medium text-gray-700"> Полное описание </label>
+						<RichTextEditor
+							content={description}
+							onchange={(html) => (description = html)}
+							placeholder="Полное описание проекта..."
+						/>
 					</div>
 
 					<!-- Flags -->
