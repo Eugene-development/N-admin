@@ -154,3 +154,49 @@ export async function toggleImageActive(imageId) {
     
     return result;
 }
+
+/**
+ * Upload a logo file to the logo/ folder in S3 storage
+ * @param {File} file - Logo file to upload
+ * @returns {Promise<{url: string, path: string, filename: string}>}
+ */
+export async function uploadLogo(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/api/logos/upload`, {
+        method: 'POST',
+        headers: getHeaders(false), // Не устанавливаем Content-Type для FormData
+        body: formData,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Ошибка загрузки логотипа');
+    }
+
+    return result;
+}
+
+/**
+ * Delete a logo from S3 storage
+ * @param {string} path - Path of the logo file (e.g. logo/filename.webp)
+ * @returns {Promise<object>}
+ */
+export async function deleteLogo(path) {
+    const response = await fetch(`${API_URL}/api/logos`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+        body: JSON.stringify({ path }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Ошибка удаления логотипа');
+    }
+
+    return result;
+}
+
